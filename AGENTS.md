@@ -28,3 +28,10 @@ use the editor.
   own key and store it in Secrets.
 - **Secrets.** Lovable manages them. Do not put secret values in the repo.
 <!-- LOVABLE:END -->
+
+## Project rules
+
+- Site-wide text that may change (name, tagline, placeholder contact details, help categories) lives in `src/lib/site.ts`; pages read from it so edits happen in one place.
+- Form validation rules live as zod schemas in `src/lib/forms.ts` with tests beside them; forms validate on the client against these schemas.
+- The public header/footer are rendered in `__root.tsx` and hidden on `/admin*`, which has its own layout.
+- Admin dashboard uses fictional data from `src/lib/sample-data.ts` and a non-functional sign-in screen until a real backend with secure auth is connected.
