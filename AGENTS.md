@@ -34,4 +34,5 @@ use the editor.
 - Site-wide text that may change (name, tagline, placeholder contact details, help categories) lives in `src/lib/site.ts`; pages read from it so edits happen in one place.
 - Form validation rules live as zod schemas in `src/lib/forms.ts` with tests beside them; forms validate on the client against these schemas.
 - The public header/footer are rendered in `__root.tsx` and hidden on `/admin*`, which has its own layout.
-- Admin dashboard uses fictional data from `src/lib/sample-data.ts` and a non-functional sign-in screen until a real backend with secure auth is connected.
+- Admin dashboard still uses fictional data from `src/lib/sample-data.ts` and a non-functional sign-in screen; real admin access must check `private.has_role(auth.uid(), 'admin')` via `public.user_roles` (roles assigned only in the database, never from the app).
+- `help_requests` is insert-only for visitors (column-level INSERT grant, no SELECT), so the browser creates the UUID itself and shows it as the reference; never add `.select()` to that insert.

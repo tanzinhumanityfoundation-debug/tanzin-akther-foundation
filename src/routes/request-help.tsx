@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { AlertTriangle, CheckCircle2, Lock } from "lucide-react";
+import { AlertTriangle, CheckCircle2, Loader2, Lock } from "lucide-react";
 import { useState, type FormEvent } from "react";
 
 import { describedBy, FormField } from "@/components/site/FormField";
@@ -13,6 +13,7 @@ import {
   helpRequestSchema,
   type ContactMethodId,
 } from "@/lib/forms";
+import { submitHelpRequest } from "@/lib/help-requests";
 import { HELP_CATEGORIES } from "@/lib/site";
 import { cn } from "@/lib/utils";
 
@@ -54,15 +55,21 @@ const selectClass =
 function RequestHelpPage() {
   const [values, setValues] = useState(EMPTY);
   const [errors, setErrors] = useState<Errors>({});
-  const [submittedName, setSubmittedName] = useState<string | null>(null);
+  const [submitted, setSubmitted] = useState<{ name: string; reference: string; id: string } | null>(
+    null,
+  );
+  const [sending, setSending] = useState(false);
+  const [submitError, setSubmitError] = useState<string | null>(null);
 
   const set = <K extends keyof typeof EMPTY>(key: K, value: (typeof EMPTY)[K]) => {
     setValues((v) => ({ ...v, [key]: value }));
     if (errors[key]) setErrors((e) => ({ ...e, [key]: undefined }));
   };
 
-  const onSubmit = (e: FormEvent) => {
+  const onSubmit = async (e: FormEvent) => {
     e.preventDefault();
+    if (sending) return;
+    setSubmitError(null);
     const result = helpRequestSchema.safeParse(values);
     if (!result.success) {
       const next: Errors = {};
@@ -75,10 +82,20 @@ function RequestHelpPage() {
       if (first) document.getElementById(first)?.focus();
       return;
     }
-    // Preview version: nothing is sent or stored yet.
-    setSubmittedName(result.data.fullName);
-    setValues(EMPTY);
-    window.scrollTo({ top: 0, behavior: "smooth" });
+    setSending(true);
+    try {
+      const saved = await submitHelpRequest(values);
+      setSubmitted(saved);
+      setValues(EMPTY);
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    } catch (err) {
+      console.error("Help request failed", err);
+      setSubmitError(
+        "Sorry, we couldn't send your request right now. Please check your internet connection and try again in a few minutes.",
+      );
+    } finally {
+      setSending(false);
+    }
   };
 
   const isEmail = values.contactMethod === "email";
@@ -94,25 +111,33 @@ function RequestHelpPage() {
 
       <section className="container-page py-12 md:py-16">
         <div className="grid gap-10 lg:grid-cols-[1fr_20rem] lg:gap-14">
-          {submittedName ? (
+          {submitted ? (
             <div
               role="status"
               className="rounded-2xl border border-primary/25 bg-primary-soft p-8 md:p-10"
             >
               <CheckCircle2 className="size-10 text-primary" aria-hidden="true" />
               <h2 className="mt-4 text-2xl font-semibold md:text-3xl">
-                Thank you, {submittedName}.
+                Thank you, {submitted.name}.
               </h2>
               <p className="mt-3 text-lg text-muted-foreground">
                 Your request has been received. A member of our team will review it and contact you
                 using the method you chose.
               </p>
-              <p className="mt-4 rounded-lg border border-border bg-background p-3 text-sm text-muted-foreground">
-                Preview version: requests are not sent or saved yet. This screen shows what people
-                will see once the form is connected.
-              </p>
+              <div className="mt-5 rounded-xl border border-border bg-background p-4">
+                <p className="text-sm text-muted-foreground">Your request reference</p>
+                <p className="mt-1 font-display text-2xl font-semibold tracking-wide text-primary-deep">
+                  {submitted.reference}
+                </p>
+                <p className="mt-1 break-all text-xs text-muted-foreground">
+                  Full reference: {submitted.id}
+                </p>
+                <p className="mt-2 text-sm text-muted-foreground">
+                  Please keep this reference if you contact us about your request.
+                </p>
+              </div>
               <div className="mt-6 flex flex-col gap-3 sm:flex-row">
-                <Button onClick={() => setSubmittedName(null)}>Send another request</Button>
+                <Button onClick={() => setSubmitted(null)}>Send another request</Button>
                 <Button asChild variant="soft">
                   <Link to="/">Back to home</Link>
                 </Button>
@@ -278,8 +303,30 @@ function RequestHelpPage() {
                 ) : null}
               </div>
 
-              <Button type="submit" variant="hero" size="lg" className="w-full sm:w-auto">
-                Send my request
+              {submitError ? (
+                <div
+                  role="alert"
+                  className="flex items-start gap-3 rounded-xl border border-destructive/40 bg-destructive/5 p-4 text-base text-destructive"
+                >
+                  <AlertTriangle className="mt-0.5 size-5 shrink-0" aria-hidden="true" />
+                  <span>{submitError}</span>
+                </div>
+              ) : null}
+
+              <Button
+                type="submit"
+                variant="hero"
+                size="lg"
+                className="w-full sm:w-auto"
+                disabled={sending}
+              >
+                {sending ? (
+                  <>
+                    <Loader2 className="animate-spin" aria-hidden="true" /> Sending…
+                  </>
+                ) : (
+                  "Send my request"
+                )}
               </Button>
             </form>
           )}
