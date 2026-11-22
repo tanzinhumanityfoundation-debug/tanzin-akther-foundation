@@ -12,7 +12,7 @@ export function FormField({
 }: {
   id: string;
   label: string;
-  hint?: string;
+  hint?: string | undefined;
   error?: string | undefined;
   required?: boolean;
   children: ReactNode;
