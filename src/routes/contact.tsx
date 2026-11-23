@@ -1,13 +1,13 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { Clock, Mail, MapPin, Phone } from "lucide-react";
+import { AlertTriangle, CheckCircle2, Clock, Loader2, Mail, MapPin, Phone } from "lucide-react";
 import { useState, type FormEvent } from "react";
-import { toast } from "sonner";
 
 import { describedBy, FormField } from "@/components/site/FormField";
 import { PageIntro } from "@/components/site/PageIntro";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { submitContactMessage } from "@/lib/contact-messages";
 import { contactSchema } from "@/lib/forms";
 import { CONTACT } from "@/lib/site";
 
@@ -44,14 +44,20 @@ const DETAILS = [
 function ContactPage() {
   const [values, setValues] = useState(EMPTY);
   const [errors, setErrors] = useState<Partial<Record<Field, string>>>({});
+  const [sending, setSending] = useState(false);
+  const [sent, setSent] = useState(false);
+  const [submitError, setSubmitError] = useState<string | null>(null);
 
   const set = (key: Field, value: string) => {
     setValues((v) => ({ ...v, [key]: value }));
     if (errors[key]) setErrors((e) => ({ ...e, [key]: undefined }));
   };
 
-  const onSubmit = (e: FormEvent) => {
+  const onSubmit = async (e: FormEvent) => {
     e.preventDefault();
+    if (sending) return;
+    setSubmitError(null);
+    setSent(false);
     const result = contactSchema.safeParse(values);
     if (!result.success) {
       const next: Partial<Record<Field, string>> = {};
@@ -64,11 +70,19 @@ function ContactPage() {
       if (first) document.getElementById(first)?.focus();
       return;
     }
-    // Preview version: nothing is sent or stored yet.
-    toast.success("Thank you! Your message has been received.", {
-      description: "Preview version: messages are not sent or saved yet.",
-    });
-    setValues(EMPTY);
+    setSending(true);
+    try {
+      await submitContactMessage(values);
+      setSent(true);
+      setValues(EMPTY);
+    } catch (err) {
+      console.error("Contact message failed", err);
+      setSubmitError(
+        "Sorry, we couldn't send your message right now. Please check your internet connection and try again in a few minutes.",
+      );
+    } finally {
+      setSending(false);
+    }
   };
 
   return (
@@ -155,8 +169,32 @@ function ContactPage() {
                 maxLength={1000}
               />
             </FormField>
-            <Button type="submit" size="lg" className="w-full sm:w-auto">
-              Send message
+            {sent ? (
+              <div
+                role="status"
+                className="flex items-start gap-3 rounded-xl border border-primary/25 bg-primary-soft p-4 text-base text-primary-deep"
+              >
+                <CheckCircle2 className="mt-0.5 size-5 shrink-0" aria-hidden="true" />
+                <span>Thank you! Your message has been received. We'll reply by email.</span>
+              </div>
+            ) : null}
+            {submitError ? (
+              <div
+                role="alert"
+                className="flex items-start gap-3 rounded-xl border border-destructive/40 bg-destructive/5 p-4 text-base text-destructive"
+              >
+                <AlertTriangle className="mt-0.5 size-5 shrink-0" aria-hidden="true" />
+                <span>{submitError}</span>
+              </div>
+            ) : null}
+            <Button type="submit" size="lg" className="w-full sm:w-auto" disabled={sending}>
+              {sending ? (
+                <>
+                  <Loader2 className="animate-spin" aria-hidden="true" /> Sending…
+                </>
+              ) : (
+                "Send message"
+              )}
             </Button>
           </form>
         </div>

@@ -1,14 +1,17 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import {
+  AlertTriangle,
   ArrowLeft,
   Inbox,
+  Loader2,
   LayoutDashboard,
   LogOut,
   Mail,
   Search,
   ShieldCheck,
 } from "lucide-react";
-import { useMemo, useState, type FormEvent } from "react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useEffect, useMemo, useState, type FormEvent } from "react";
 import { toast } from "sonner";
 
 import { Logo } from "@/components/site/Logo";
@@ -25,9 +28,13 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import {
+  fetchContactMessages,
+  markContactMessageRead,
+  type ContactMessage,
+} from "@/lib/contact-messages";
 import { CONTACT_METHODS } from "@/lib/forms";
 import {
-  SAMPLE_MESSAGES,
   SAMPLE_REQUESTS,
   STATUS_LABELS,
   type RequestStatus,
@@ -70,21 +77,109 @@ function formatDate(iso: string) {
   });
 }
 
-function AdminPage() {
-  // Design preview only: real, secure sign-in is added when a database is connected.
-  const [signedIn, setSignedIn] = useState(false);
-  return signedIn ? (
-    <Dashboard onSignOut={() => setSignedIn(false)} />
-  ) : (
-    <SignIn onSignIn={() => setSignedIn(true)} />
-  );
+type AuthState =
+  | { kind: "loading" }
+  | { kind: "signed_out" }
+  | { kind: "not_admin"; email: string }
+  | { kind: "admin"; email: string };
+
+async function getSupabase() {
+  return (await import("@/integrations/supabase/client")).supabase;
 }
 
-function SignIn({ onSignIn }: { onSignIn: () => void }) {
-  const submit = (e: FormEvent) => {
-    e.preventDefault();
-    onSignIn();
+/** Reads the signed-in user (re-checked with the auth server) and whether they hold the admin role. */
+async function resolveAuth(): Promise<AuthState> {
+  const supabase = await getSupabase();
+  const { data, error } = await supabase.auth.getUser();
+  if (error || !data.user) return { kind: "signed_out" };
+  const email = data.user.email ?? "Signed-in account";
+  // RLS only lets a user see their own role rows, so this cannot reveal other admins.
+  const { data: roles } = await supabase
+    .from("user_roles")
+    .select("role")
+    .eq("user_id", data.user.id)
+    .eq("role", "admin");
+  return roles && roles.length > 0 ? { kind: "admin", email } : { kind: "not_admin", email };
+}
+
+function AdminPage() {
+  const [auth, setAuth] = useState<AuthState>({ kind: "loading" });
+  const queryClient = useQueryClient();
+
+  useEffect(() => {
+    let active = true;
+    let unsubscribe: (() => void) | undefined;
+    const refresh = () => resolveAuth().then((next) => active && setAuth(next));
+    refresh();
+    getSupabase().then((supabase) => {
+      const { data } = supabase.auth.onAuthStateChange((event) => {
+        if (event !== "SIGNED_IN" && event !== "SIGNED_OUT" && event !== "USER_UPDATED") return;
+        queryClient.removeQueries({ queryKey: ["admin"] });
+        refresh();
+      });
+      unsubscribe = () => data.subscription.unsubscribe();
+      if (!active) unsubscribe();
+    });
+    return () => {
+      active = false;
+      unsubscribe?.();
+    };
+  }, [queryClient]);
+
+  const signOut = async () => {
+    const supabase = await getSupabase();
+    await supabase.auth.signOut();
+    queryClient.removeQueries({ queryKey: ["admin"] });
+    setAuth({ kind: "signed_out" });
   };
+
+  if (auth.kind === "loading") {
+    return (
+      <div className="bg-hero flex min-h-screen items-center justify-center">
+        <Loader2 className="size-8 animate-spin text-primary" aria-label="Loading" />
+      </div>
+    );
+  }
+  if (auth.kind === "admin") return <Dashboard email={auth.email} onSignOut={signOut} />;
+  return <SignIn notAdminEmail={auth.kind === "not_admin" ? auth.email : null} onSignOut={signOut} />;
+}
+
+function SignIn({
+  notAdminEmail,
+  onSignOut,
+}: {
+  notAdminEmail: string | null;
+  onSignOut: () => void;
+}) {
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const submit = async (e: FormEvent) => {
+    e.preventDefault();
+    if (busy) return;
+    setError(null);
+    if (!email.trim() || !password) {
+      setError("Please enter your email and password.");
+      return;
+    }
+    setBusy(true);
+    try {
+      const supabase = await getSupabase();
+      const { error: signInError } = await supabase.auth.signInWithPassword({
+        email: email.trim(),
+        password,
+      });
+      if (signInError) setError("Sign-in failed. Please check your email and password.");
+      else setPassword("");
+    } catch {
+      setError("Couldn't reach the server. Please try again in a few minutes.");
+    } finally {
+      setBusy(false);
+    }
+  };
+
   return (
     <div className="bg-hero flex min-h-screen flex-col">
       <div className="container-page flex items-center justify-between py-5">
@@ -102,26 +197,62 @@ function SignIn({ onSignIn }: { onSignIn: () => void }) {
           <p className="mt-2 text-muted-foreground">
             This area is only for authorized team members.
           </p>
-          <form onSubmit={submit} className="mt-6 space-y-5">
-            <div className="space-y-2">
-              <Label htmlFor="admin-email" className="text-base font-semibold">
-                Email
-              </Label>
-              <Input id="admin-email" type="email" autoComplete="username" className="h-11 text-base" />
+
+          {notAdminEmail ? (
+            <div role="alert" className="mt-6 space-y-3 rounded-xl border border-destructive/40 bg-destructive/5 p-4 text-destructive">
+              <p className="flex items-start gap-2">
+                <AlertTriangle className="mt-0.5 size-5 shrink-0" aria-hidden="true" />
+                <span>
+                  <span className="font-semibold">{notAdminEmail}</span> is not an authorized
+                  administrator.
+                </span>
+              </p>
+              <Button variant="outline" size="sm" onClick={onSignOut}>
+                <LogOut /> Sign out
+              </Button>
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="admin-password" className="text-base font-semibold">
-                Password
-              </Label>
-              <Input id="admin-password" type="password" autoComplete="current-password" className="h-11 text-base" />
-            </div>
-            <Button type="submit" size="lg" className="w-full">
-              Sign in
-            </Button>
-          </form>
-          <p className="mt-5 rounded-lg bg-warm-soft p-3 text-sm text-foreground">
-            Design preview: sign-in is not active yet, so any entry opens the sample dashboard.
-            Real protection will be added when the database is connected.
+          ) : (
+            <form onSubmit={submit} noValidate className="mt-6 space-y-5">
+              <div className="space-y-2">
+                <Label htmlFor="admin-email" className="text-base font-semibold">
+                  Email
+                </Label>
+                <Input
+                  id="admin-email"
+                  type="email"
+                  autoComplete="username"
+                  className="h-11 text-base"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  maxLength={255}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="admin-password" className="text-base font-semibold">
+                  Password
+                </Label>
+                <Input
+                  id="admin-password"
+                  type="password"
+                  autoComplete="current-password"
+                  className="h-11 text-base"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                />
+              </div>
+              {error ? (
+                <p role="alert" className="text-sm font-medium text-destructive">
+                  {error}
+                </p>
+              ) : null}
+              <Button type="submit" size="lg" className="w-full" disabled={busy}>
+                {busy ? <Loader2 className="animate-spin" aria-hidden="true" /> : null}
+                Sign in
+              </Button>
+            </form>
+          )}
+          <p className="mt-5 text-sm text-muted-foreground">
+            Admin accounts are created by the foundation.
           </p>
         </div>
       </div>
@@ -129,10 +260,24 @@ function SignIn({ onSignIn }: { onSignIn: () => void }) {
   );
 }
 
-function Dashboard({ onSignOut }: { onSignOut: () => void }) {
+function Dashboard({ email, onSignOut }: { email: string; onSignOut: () => void }) {
   const [tab, setTab] = useState<"requests" | "messages">("requests");
   const [requests, setRequests] = useState<SampleHelpRequest[]>(SAMPLE_REQUESTS);
-  const [messages, setMessages] = useState(SAMPLE_MESSAGES);
+  const queryClient = useQueryClient();
+  const messagesQuery = useQuery({ queryKey: ["admin", "contact-messages"], queryFn: fetchContactMessages });
+  const messages: ContactMessage[] = messagesQuery.data ?? [];
+  const markRead = useMutation({
+    mutationFn: markContactMessageRead,
+    onMutate: (id: string) => {
+      queryClient.setQueryData<ContactMessage[]>(["admin", "contact-messages"], (all) =>
+        all?.map((m) => (m.id === id ? { ...m, read: true } : m)),
+      );
+    },
+    onError: () => {
+      toast.error("Couldn't mark the message as read. Please try again.");
+      queryClient.invalidateQueries({ queryKey: ["admin", "contact-messages"] });
+    },
+  });
   const [statusFilter, setStatusFilter] = useState<RequestStatus | "all">("all");
   const [categoryFilter, setCategoryFilter] = useState("all");
   const [query, setQuery] = useState("");
@@ -210,7 +355,7 @@ function Dashboard({ onSignOut }: { onSignOut: () => void }) {
         </nav>
         <div className="hidden p-5 lg:absolute lg:bottom-0 lg:block lg:w-full">
           <div className="rounded-xl border border-sidebar-border p-4 text-sm text-sidebar-foreground/80">
-            Signed in as <span className="font-semibold text-sidebar-foreground">Sample Admin</span>
+            Signed in as <span className="break-all font-semibold text-sidebar-foreground">{email}</span>
           </div>
           <Button
             variant="ghost"
@@ -225,7 +370,9 @@ function Dashboard({ onSignOut }: { onSignOut: () => void }) {
       {/* Main */}
       <div className="min-w-0">
         <div className="border-b border-border bg-warm-soft px-5 py-2.5 text-center text-sm text-foreground md:px-8">
-          Sample data only — these are fictional entries for design preview.
+          {tab === "requests"
+            ? "Help requests: sample data only — these are fictional entries for design preview."
+            : "Contact messages: real messages sent through the website."}
         </div>
 
         <div className="mx-auto max-w-6xl space-y-8 p-5 md:p-8">
@@ -324,6 +471,20 @@ function Dashboard({ onSignOut }: { onSignOut: () => void }) {
             </>
           ) : (
             <section aria-label="Messages" className="rounded-2xl border border-border bg-card shadow-soft">
+              {messagesQuery.isPending ? (
+                <p className="flex items-center justify-center gap-2 p-10 text-muted-foreground">
+                  <Loader2 className="size-5 animate-spin" aria-hidden="true" /> Loading messages…
+                </p>
+              ) : messagesQuery.isError ? (
+                <div role="alert" className="space-y-3 p-10 text-center">
+                  <p className="text-destructive">Couldn't load messages. Please try again.</p>
+                  <Button variant="outline" size="sm" onClick={() => messagesQuery.refetch()}>
+                    Try again
+                  </Button>
+                </div>
+              ) : messages.length === 0 ? (
+                <p className="p-10 text-center text-muted-foreground">No messages yet.</p>
+              ) : (
               <ul className="divide-y divide-border">
                 {messages.map((m) => (
                   <li key={m.id}>
@@ -331,7 +492,7 @@ function Dashboard({ onSignOut }: { onSignOut: () => void }) {
                       type="button"
                       onClick={() => {
                         setOpenMsgId(m.id);
-                        setMessages((all) => all.map((x) => (x.id === m.id ? { ...x, read: true } : x)));
+                        if (!m.read) markRead.mutate(m.id);
                       }}
                       className="flex w-full items-start gap-4 p-4 text-left transition-colors hover:bg-muted md:px-5"
                     >
@@ -342,7 +503,7 @@ function Dashboard({ onSignOut }: { onSignOut: () => void }) {
                       <span className="min-w-0 flex-1">
                         <span className="flex flex-wrap items-baseline justify-between gap-2">
                           <span className={cn("text-foreground", !m.read && "font-semibold")}>{m.subject}</span>
-                          <span className="text-sm text-muted-foreground">{formatDate(m.receivedAt)}</span>
+                          <span className="text-sm text-muted-foreground">{formatDate(m.created_at)}</span>
                         </span>
                         <span className="block text-sm text-muted-foreground">
                           {m.name} · {m.email}
@@ -353,6 +514,7 @@ function Dashboard({ onSignOut }: { onSignOut: () => void }) {
                   </li>
                 ))}
               </ul>
+              )}
             </section>
           )}
         </div>
@@ -375,7 +537,7 @@ function Dashboard({ onSignOut }: { onSignOut: () => void }) {
               <DialogHeader>
                 <DialogTitle className="font-display text-2xl text-primary-deep">{openMsg.subject}</DialogTitle>
                 <DialogDescription>
-                  From {openMsg.name} ({openMsg.email}) · {formatDate(openMsg.receivedAt)}
+                  From {openMsg.name} ({openMsg.email}) · {formatDate(openMsg.created_at)}
                 </DialogDescription>
               </DialogHeader>
               <p className="whitespace-pre-line text-foreground">{openMsg.message}</p>
