@@ -11,7 +11,6 @@ export const SITE = {
 /** Public contact details for the foundation. */
 export const CONTACT = {
   email: "tanzinhumanityfoundation@gmail.com",
-  phone: "01741985516",
   address: "Jamtola Bazar, Shewrapara, Mirpur, Dhaka",
 } as const;
 

@@ -41,7 +41,6 @@ export function SiteFooter() {
           </h2>
           <ul className="mt-4 space-y-2 text-primary-foreground/90">
             <li>{CONTACT.email}</li>
-            <li>{CONTACT.phone}</li>
             <li>{CONTACT.address}</li>
           </ul>
         </div>

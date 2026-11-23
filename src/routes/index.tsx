@@ -1,9 +1,9 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { ArrowRight, ClipboardList, Lock, MessageCircleHeart, PhoneCall } from "lucide-react";
+import { ArrowRight, ClipboardList, HeartHandshake, Lock, MessageCircleHeart, PhoneCall } from "lucide-react";
 
 import heroImage from "@/assets/hero-community.jpg";
 import { Button } from "@/components/ui/button";
-import { HELP_CATEGORIES, SITE } from "@/lib/site";
+import { CONTACT, HELP_CATEGORIES, SITE } from "@/lib/site";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -211,6 +211,19 @@ function HomePage() {
               <Link to="/contact">Contact us</Link>
             </Button>
           </div>
+          <p className="relative mx-auto mt-8 flex max-w-xl items-start justify-center gap-2 text-base text-primary-foreground/85">
+            <HeartHandshake className="mt-0.5 size-5 shrink-0" aria-hidden="true" />
+            <span>
+              Want to support our work with a donation? Please contact us at{" "}
+              <a
+                href={`mailto:${CONTACT.email}`}
+                className="font-semibold underline underline-offset-4 hover:text-primary-foreground"
+              >
+                {CONTACT.email}
+              </a>
+              .
+            </span>
+          </p>
         </div>
       </section>
     </>
