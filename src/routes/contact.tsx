@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { AlertTriangle, CheckCircle2, Clock, Loader2, Mail, MapPin, Phone } from "lucide-react";
+import { AlertTriangle, CheckCircle2, Loader2, Mail, MapPin, Phone } from "lucide-react";
 import { useState, type FormEvent } from "react";
 
 import { describedBy, FormField } from "@/components/site/FormField";
@@ -38,7 +38,6 @@ const DETAILS = [
   { icon: Mail, label: "Email", value: CONTACT.email },
   { icon: Phone, label: "Phone", value: CONTACT.phone },
   { icon: MapPin, label: "Address", value: CONTACT.address },
-  { icon: Clock, label: "Office hours", value: CONTACT.hours },
 ];
 
 function ContactPage() {

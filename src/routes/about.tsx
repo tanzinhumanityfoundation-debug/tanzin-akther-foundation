@@ -74,18 +74,21 @@ function AboutPage() {
           </div>
           <div className="space-y-5 text-lg text-muted-foreground">
             <p>
-              The foundation began with a simple belief: <strong className="text-foreground">humanity comes first</strong>.
-              When someone in our community is struggling, a little help at the right time can change
-              what happens next.
+              Tanzin Akther Foundation began with a simple belief:{" "}
+              <strong className="text-foreground">humanity comes first</strong>. In every community,
+              there are families who quietly struggle — a child who may have to leave school because
+              fees cannot be paid, a family that cannot afford medicine, a household that loses its
+              income overnight. Often, a little help at the right time can change what happens next.
             </p>
             <p>
-              We are starting small and growing carefully. Our focus is on listening to each
-              person's situation, keeping their information private, and offering help where we
-              can.
+              We are a small, people-centred initiative based in Dhaka. We listen to people facing
+              hardship and help where we can, with a focus on education, financial difficulties,
+              medical needs and other urgent humanitarian situations.
             </p>
-            <p className="rounded-xl border border-border bg-background p-4 text-base">
-              [Add the foundation's own story, founding year and team details here once they are
-              confirmed.]
+            <p>
+              We are growing carefully. Every request is read by a real person, every story is
+              treated with respect, and personal information is never made public. Our promise is
+              simple: to stand beside people in hard times with kindness and dignity.
             </p>
           </div>
         </div>

@@ -8,12 +8,11 @@ export const SITE = {
     "Tanzin Akther Foundation helps people facing hardship with education, financial difficulties, medical needs and other humanitarian situations.",
 } as const;
 
-/** Placeholder contact details. Replace with the organization's real details before launch. */
+'/** Public contact details for the foundation. */
 export const CONTACT = {
-  email: "[Email address to be added]",
-  phone: "[Phone number to be added]",
-  address: "[Office address to be added]",
-  hours: "[Office hours to be added]",
+  email: "tanzinhumanityfoundation@gmail.com",
+  phone: "01741985516",
+  address: "Jamtola Bazar, Shewrapara, Mirpur, Dhaka",
 } as const;
 
 export const NAV_LINKS = [
