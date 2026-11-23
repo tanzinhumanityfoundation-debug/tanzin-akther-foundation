@@ -8,7 +8,7 @@ export const SITE = {
     "Tanzin Akther Foundation helps people facing hardship with education, financial difficulties, medical needs and other humanitarian situations.",
 } as const;
 
-'/** Public contact details for the foundation. */
+/** Public contact details for the foundation. */
 export const CONTACT = {
   email: "tanzinhumanityfoundation@gmail.com",
   phone: "01741985516",
