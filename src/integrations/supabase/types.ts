@@ -52,6 +52,7 @@ export type Database = {
           description: string
           id: string
           name: string
+          now: string[] | null
           status: string
         }
         Insert: {
@@ -61,6 +62,7 @@ export type Database = {
           description: string
           id?: string
           name: string
+          now?: string[] | null
           status?: string
         }
         Update: {
@@ -70,6 +72,7 @@ export type Database = {
           description?: string
           id?: string
           name?: string
+          now?: string[] | null
           status?: string
         }
         Relationships: []
