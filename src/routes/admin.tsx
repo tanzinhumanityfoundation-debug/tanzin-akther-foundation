@@ -7,6 +7,7 @@ import {
   LayoutDashboard,
   LogOut,
   Mail,
+  Trash2,
   Search,
   ShieldCheck,
 } from "lucide-react";
@@ -27,18 +28,16 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
+
 import {
   fetchContactMessages,
   markContactMessageRead,
   type ContactMessage,
 } from "@/lib/contact-messages";
-import { CONTACT_METHODS } from "@/lib/forms";
+import { fetchHelpRequests, deleteHelpRequest, updateHelpRequestStatus, formatReference, type AdminHelpRequest } from "@/lib/help-requests";
 import {
-  SAMPLE_REQUESTS,
   STATUS_LABELS,
   type RequestStatus,
-  type SampleHelpRequest,
 } from "@/lib/sample-data";
 import { categoryTitle, HELP_CATEGORIES } from "@/lib/site";
 import { cn } from "@/lib/utils";
@@ -262,7 +261,9 @@ function SignIn({
 
 function Dashboard({ email, onSignOut }: { email: string; onSignOut: () => void }) {
   const [tab, setTab] = useState<"requests" | "messages">("requests");
-  const [requests, setRequests] = useState<SampleHelpRequest[]>(SAMPLE_REQUESTS);
+  const requestsQuery = useQuery({ queryKey: ["admin", "help-requests"], queryFn: fetchHelpRequests });
+  const requests = requestsQuery.data ?? [];
+  const [deleteId, setDeleteId] = useState<string | null>(null);
   const queryClient = useQueryClient();
   const messagesQuery = useQuery({ queryKey: ["admin", "contact-messages"], queryFn: fetchContactMessages });
   const messages: ContactMessage[] = messagesQuery.data ?? [];
@@ -277,6 +278,26 @@ function Dashboard({ email, onSignOut }: { email: string; onSignOut: () => void 
       toast.error("Couldn't mark the message as read. Please try again.");
       queryClient.invalidateQueries({ queryKey: ["admin", "contact-messages"] });
     },
+  });
+  const removeRequest = useMutation({
+    mutationFn: deleteHelpRequest,
+    onSuccess: (_, id) => {
+      queryClient.setQueryData<AdminHelpRequest[]>(["admin", "help-requests"], (all) => all?.filter((r) => r.id !== id));
+      setDeleteId(null);
+      setOpenId(null);
+      toast.success("Request deleted.");
+      queryClient.invalidateQueries({ queryKey: ["admin", "help-requests"] });
+    },
+    onError: () => toast.error("Couldn't delete the request. Please try again."),
+  });
+  const saveStatus = useMutation({
+    mutationFn: updateHelpRequestStatus,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["admin", "help-requests"] });
+      setOpenId(null);
+      toast.success("Request updated.");
+    },
+    onError: () => toast.error("Couldn't update the request. Please try again."),
   });
   const [statusFilter, setStatusFilter] = useState<RequestStatus | "all">("all");
   const [categoryFilter, setCategoryFilter] = useState("all");
@@ -371,7 +392,7 @@ function Dashboard({ email, onSignOut }: { email: string; onSignOut: () => void 
       <div className="min-w-0">
         <div className="border-b border-border bg-warm-soft px-5 py-2.5 text-center text-sm text-foreground md:px-8">
           {tab === "requests"
-            ? "Help requests: sample data only — these are fictional entries for design preview."
+            ? "Help requests"
             : "Contact messages: real messages sent through the website."}
         </div>
 
@@ -439,7 +460,11 @@ function Dashboard({ email, onSignOut }: { email: string; onSignOut: () => void 
                   </select>
                 </div>
 
-                {filtered.length === 0 ? (
+                {requestsQuery.isPending ? (
+                  <p className="flex items-center justify-center gap-2 p-10 text-muted-foreground"><Loader2 className="size-5 animate-spin" /> Loading requests…</p>
+                ) : requestsQuery.isError ? (
+                  <div role="alert" className="p-10 text-center"><p className="text-destructive">Couldn't load requests.</p><Button variant="outline" onClick={() => requestsQuery.refetch()}>Try again</Button></div>
+                ) : filtered.length === 0 ? (
                   <p className="p-10 text-center text-muted-foreground">No requests match these filters.</p>
                 ) : (
                   <ul className="divide-y divide-border">
@@ -450,7 +475,7 @@ function Dashboard({ email, onSignOut }: { email: string; onSignOut: () => void 
                           onClick={() => setOpenId(r.id)}
                           className="grid w-full gap-2 p-4 text-left transition-colors hover:bg-muted md:grid-cols-[7rem_1fr_10rem_7rem_6.5rem] md:items-center md:gap-4 md:px-5"
                         >
-                          <span className="text-sm font-semibold text-muted-foreground">{r.id}</span>
+                          <span className="text-sm font-semibold text-muted-foreground">{formatReference(r.id)}</span>
                           <span className="min-w-0">
                             <span className="block font-semibold text-foreground">{r.fullName}</span>
                             <span className="block truncate text-sm text-muted-foreground">{r.description}</span>
@@ -523,12 +548,25 @@ function Dashboard({ email, onSignOut }: { email: string; onSignOut: () => void 
       <RequestDialog
         request={open}
         onClose={() => setOpenId(null)}
-        onSave={(updated) => {
-          setRequests((all) => all.map((r) => (r.id === updated.id ? updated : r)));
-          setOpenId(null);
-          toast.success(`${updated.id} updated`, { description: "Sample data — changes are not saved." });
-        }}
+        onSave={(updated) => saveStatus.mutate(updated)}
+        onDelete={(id) => setDeleteId(id)}
+        busy={saveStatus.isPending || removeRequest.isPending}
       />
+
+      <Dialog open={deleteId !== null} onOpenChange={(o) => { if (!o && !removeRequest.isPending) setDeleteId(null); }}>
+        <DialogContent className="max-w-md" showCloseButton={!removeRequest.isPending}>
+          <DialogHeader>
+            <DialogTitle>Delete help request?</DialogTitle>
+            <DialogDescription>This permanently deletes {deleteId ? formatReference(deleteId) : "the request"}. This cannot be undone.</DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" disabled={removeRequest.isPending} onClick={() => setDeleteId(null)}>Cancel</Button>
+            <Button variant="destructive" disabled={removeRequest.isPending} onClick={() => { if (deleteId) removeRequest.mutate(deleteId); }}>
+              {removeRequest.isPending ? <Loader2 className="animate-spin" /> : <Trash2 />} Delete permanently
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       <Dialog open={!!openMsg} onOpenChange={(o) => !o && setOpenMsgId(null)}>
         <DialogContent className="max-w-lg">
@@ -553,15 +591,19 @@ function RequestDialog({
   request,
   onClose,
   onSave,
+  onDelete,
+  busy,
 }: {
-  request: SampleHelpRequest | null;
+  request: AdminHelpRequest | null;
   onClose: () => void;
-  onSave: (r: SampleHelpRequest) => void;
+  onSave: (r: AdminHelpRequest) => void;
+  onDelete: (id: string) => void;
+  busy: boolean;
 }) {
   return (
     <Dialog open={!!request} onOpenChange={(o) => !o && onClose()}>
       <DialogContent className="max-h-[90vh] max-w-xl overflow-y-auto">
-        {request ? <RequestDetail key={request.id} request={request} onSave={onSave} /> : null}
+        {request ? <RequestDetail key={request.id} request={request} onSave={onSave} onDelete={onDelete} busy={busy} /> : null}
       </DialogContent>
     </Dialog>
   );
@@ -570,18 +612,21 @@ function RequestDialog({
 function RequestDetail({
   request,
   onSave,
+  onDelete,
+  busy,
 }: {
-  request: SampleHelpRequest;
-  onSave: (r: SampleHelpRequest) => void;
+  request: AdminHelpRequest;
+  onSave: (r: AdminHelpRequest) => void;
+  onDelete: (id: string) => void;
+  busy: boolean;
 }) {
   const [status, setStatus] = useState<RequestStatus>(request.status);
-  const [note, setNote] = useState(request.note);
-  const method = CONTACT_METHODS.find((m) => m.id === request.contactMethod)?.label;
+
 
   return (
     <>
       <DialogHeader>
-        <p className="text-sm font-semibold text-muted-foreground">{request.id}</p>
+        <p className="text-sm font-semibold text-muted-foreground">{formatReference(request.id)}</p>
         <DialogTitle className="font-display text-2xl text-primary-deep">{request.fullName}</DialogTitle>
         <DialogDescription>
           {categoryTitle(request.category)} · Submitted {formatDate(request.submittedAt)}
@@ -589,10 +634,6 @@ function RequestDetail({
       </DialogHeader>
 
       <dl className="grid gap-4 rounded-xl bg-muted p-4 text-sm sm:grid-cols-2">
-        <div>
-          <dt className="font-semibold text-foreground">Preferred contact</dt>
-          <dd className="text-muted-foreground">{method}</dd>
-        </div>
         <div>
           <dt className="font-semibold text-foreground">Contact detail</dt>
           <dd className="break-words text-muted-foreground">{request.contactDetail}</dd>
@@ -625,15 +666,9 @@ function RequestDetail({
           ))}
         </select>
       </div>
-      <div className="space-y-2">
-        <Label htmlFor="note" className="font-semibold">
-          Internal note (only visible to admins)
-        </Label>
-        <Textarea id="note" rows={3} value={note} onChange={(e) => setNote(e.target.value)} maxLength={500} />
-      </div>
-
       <DialogFooter className="gap-2">
-        <Button onClick={() => onSave({ ...request, status, note })}>Save changes</Button>
+        <Button variant="destructive" disabled={busy} onClick={() => onDelete(request.id)}><Trash2 /> Delete request</Button>
+        <Button disabled={busy} onClick={() => onSave({ ...request, status })}>Save changes</Button>
       </DialogFooter>
     </>
   );

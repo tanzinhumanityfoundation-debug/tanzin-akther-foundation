@@ -1,0 +1,2 @@
+GRANT DELETE ON public.help_requests TO authenticated;
+CREATE POLICY "Admins can delete help requests" ON public.help_requests FOR DELETE TO authenticated USING (private.has_role(auth.uid(), 'admin'::public.app_role));

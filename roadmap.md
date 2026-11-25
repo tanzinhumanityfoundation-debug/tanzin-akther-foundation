@@ -1,0 +1,2 @@
+- [ ] Show real help requests and allow confirmed admin-only deletion.
+- [ ] Verify deletion and visitor restrictions without deleting existing requests.
