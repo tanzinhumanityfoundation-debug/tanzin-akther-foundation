@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { CONTACT, HELP_CATEGORIES, SITE } from "@/lib/site";
 
 export const Route = createFileRoute("/")({
+  staticData: { sitemap: true },
   head: () => ({
     meta: [
       { title: "Tanzin Akther Foundation — Humanity First" },

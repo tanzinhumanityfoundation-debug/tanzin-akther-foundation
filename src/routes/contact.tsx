@@ -12,6 +12,7 @@ import { contactSchema } from "@/lib/forms";
 import { CONTACT } from "@/lib/site";
 
 export const Route = createFileRoute("/contact")({
+  staticData: { sitemap: true },
   head: () => ({
     meta: [
       { title: "Contact Us — Tanzin Akther Foundation" },

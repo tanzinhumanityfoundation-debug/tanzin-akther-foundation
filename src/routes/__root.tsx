@@ -79,6 +79,7 @@ function ErrorComponent({ error, reset }: ErrorComponentProps) {
 }
 
 export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()({
+  staticData: { sitemap: false },
   head: () => ({
     // Each content route, / included, sets its own head(). Never add og:image or
     // twitter:image here: every page without its own would inherit the root's preview image.
@@ -92,6 +93,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
           "Tanzin Akther Foundation helps people with education, financial hardship, medical needs and other humanitarian situations.",
       },
       { name: "theme-color", content: "#1f5a45" },
+      { name: "google-site-verification", content: "kDNoiweAtWG6SbTH575ihCy55p5h6k4UscyhHZipcF0" },
       { property: "og:title", content: "Tanzin Akther Foundation" },
       {
         property: "og:description",

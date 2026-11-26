@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { SITE } from "@/lib/site";
 
 export const Route = createFileRoute("/about")({
+  staticData: { sitemap: true },
   head: () => ({
     meta: [
       { title: "About Us — Tanzin Akther Foundation" },

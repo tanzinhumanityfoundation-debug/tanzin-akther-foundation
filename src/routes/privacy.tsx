@@ -4,6 +4,7 @@ import { PageIntro } from "@/components/site/PageIntro";
 import { CONTACT, SITE } from "@/lib/site";
 
 export const Route = createFileRoute("/privacy")({
+  staticData: { sitemap: true },
   head: () => ({
     meta: [
       { title: "Privacy Policy — Tanzin Akther Foundation" },

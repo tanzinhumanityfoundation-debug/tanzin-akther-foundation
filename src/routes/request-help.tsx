@@ -18,6 +18,7 @@ import { HELP_CATEGORIES } from "@/lib/site";
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/request-help")({
+  staticData: { sitemap: true },
   head: () => ({
     meta: [
       { title: "Request Help — Tanzin Akther Foundation" },
