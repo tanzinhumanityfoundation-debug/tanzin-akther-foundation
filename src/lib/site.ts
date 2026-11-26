@@ -60,6 +60,6 @@ export const HELP_CATEGORIES: {
   },
 ];
 
-export function categoryTitle(id: HelpCategoryId) {
+export function categoryTitle(id: HelpCategoryId | string) {
   return HELP_CATEGORIES.find((c) => c.id === id)?.title ?? id;
 }

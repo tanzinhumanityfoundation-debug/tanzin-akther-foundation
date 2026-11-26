@@ -554,7 +554,7 @@ function Dashboard({ email, onSignOut }: { email: string; onSignOut: () => void 
       />
 
       <Dialog open={deleteId !== null} onOpenChange={(o) => { if (!o && !removeRequest.isPending) setDeleteId(null); }}>
-        <DialogContent className="max-w-md" showCloseButton={!removeRequest.isPending}>
+        <DialogContent className="max-w-md">
           <DialogHeader>
             <DialogTitle>Delete help request?</DialogTitle>
             <DialogDescription>This permanently deletes {deleteId ? formatReference(deleteId) : "the request"}. This cannot be undone.</DialogDescription>
