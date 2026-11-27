@@ -1,3 +1,4 @@
 - [ ] Show real help requests and allow confirmed admin-only deletion.
 - [ ] Verify deletion and visitor restrictions without deleting existing requests.
-- [ ] Finish Search Console verification and submit the published sitemap after approved publication.
+- [x] Verify the published site in Search Console and confirm owner access.
+- [ ] Submit sitemap once publication serves `/sitemap.xml`: preview returns valid XML, but the published URL returns 404 after publication.
