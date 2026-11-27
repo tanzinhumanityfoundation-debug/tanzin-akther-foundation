@@ -5,23 +5,27 @@ import { CONTACT, SITE } from "@/lib/site";
 
 export const Route = createFileRoute("/privacy")({
   staticData: { sitemap: true },
-  head: () => ({
-    meta: [
-      { title: "Privacy Policy — Tanzin Akther Foundation" },
-      {
-        name: "description",
-        content:
-          "What information Tanzin Akther Foundation collects, why we collect it, and how we keep it private and protected.",
-      },
-      { property: "og:title", content: "Privacy Policy — Tanzin Akther Foundation" },
-      {
-        property: "og:description",
-        content: "How Tanzin Akther Foundation collects, uses and protects your information.",
-      },
-      { property: "og:type", content: "website" },
-      { name: "twitter:card", content: "summary_large_image" },
-    ],
-  }),
+  head: () => {
+    const title = `Privacy Policy — ${SITE.name}`;
+    const description =
+      "Learn what Tanzin Akther Foundation collects when you request help or contact us, how your information is used and protected, and your privacy choices.";
+    const url = "https://tanzinhumanityfoundation.lovable.app/privacy";
+
+    return {
+      meta: [
+        { title },
+        { name: "description", content: description },
+        { property: "og:title", content: title },
+        { property: "og:description", content: description },
+        { property: "og:type", content: "website" },
+        { property: "og:url", content: url },
+        { name: "twitter:card", content: "summary_large_image" },
+        { name: "twitter:title", content: title },
+        { name: "twitter:description", content: description },
+      ],
+      links: [{ rel: "canonical", href: url }],
+    };
+  },
   component: PrivacyPage,
 });
 

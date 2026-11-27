@@ -2,3 +2,4 @@
 - [ ] Verify deletion and visitor restrictions without deleting existing requests.
 - [x] Verify the published site in Search Console and confirm owner access.
 - [ ] Submit sitemap once publication serves `/sitemap.xml`: preview returns valid XML, but the published URL returns 404 after publication.
+- [x] Add and verify page-specific SEO titles, descriptions and social sharing metadata on all five public pages.

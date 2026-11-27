@@ -17,6 +17,7 @@ import { SiteFooter } from "@/components/site/SiteFooter";
 import { SiteHeader } from "@/components/site/SiteHeader";
 import { Toaster } from "@/components/ui/sonner";
 import { WelcomeIntro } from "@/components/site/WelcomeIntro";
+import { SITE } from "@/lib/site";
 
 function NotFoundComponent() {
   return (
@@ -86,21 +87,9 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "Tanzin Akther Foundation" },
-      {
-        name: "description",
-        content:
-          "Tanzin Akther Foundation helps people with education, financial hardship, medical needs and other humanitarian situations.",
-      },
       { name: "theme-color", content: "#1f5a45" },
       { name: "google-site-verification", content: "kDNoiweAtWG6SbTH575ihCy55p5h6k4UscyhHZipcF0" },
-      { property: "og:title", content: "Tanzin Akther Foundation" },
-      {
-        property: "og:description",
-        content: "Humanity First. Together, We Can Make a Difference.",
-      },
-      { property: "og:type", content: "website" },
-      { name: "twitter:card", content: "summary_large_image" },
+      { property: "og:site_name", content: SITE.name },
     ],
     links: [
       { rel: "preconnect", href: "https://fonts.googleapis.com" },

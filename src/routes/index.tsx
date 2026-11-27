@@ -7,23 +7,27 @@ import { CONTACT, HELP_CATEGORIES, SITE } from "@/lib/site";
 
 export const Route = createFileRoute("/")({
   staticData: { sitemap: true },
-  head: () => ({
-    meta: [
-      { title: "Tanzin Akther Foundation — Humanity First" },
-      {
-        name: "description",
-        content:
-          "We help people facing hardship with education, financial difficulties, medical needs and other humanitarian situations. Request help in a few simple steps.",
-      },
-      { property: "og:title", content: "Tanzin Akther Foundation — Humanity First" },
-      {
-        property: "og:description",
-        content: "Humanity First. Together, We Can Make a Difference. Request help with education, finances or medical needs.",
-      },
-      { property: "og:type", content: "website" },
-      { name: "twitter:card", content: "summary_large_image" },
-    ],
-  }),
+  head: () => {
+    const title = `${SITE.name} — Humanity First`;
+    const description =
+      "Tanzin Akther Foundation is a Dhaka-based humanitarian initiative supporting education, financial hardship and medical needs with care and dignity.";
+    const url = "https://tanzinhumanityfoundation.lovable.app/";
+
+    return {
+      meta: [
+        { title },
+        { name: "description", content: description },
+        { property: "og:title", content: title },
+        { property: "og:description", content: description },
+        { property: "og:type", content: "website" },
+        { property: "og:url", content: url },
+        { name: "twitter:card", content: "summary_large_image" },
+        { name: "twitter:title", content: title },
+        { name: "twitter:description", content: description },
+      ],
+      links: [{ rel: "canonical", href: url }],
+    };
+  },
   component: HomePage,
 });
 

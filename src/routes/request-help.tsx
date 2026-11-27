@@ -14,28 +14,32 @@ import {
   type ContactMethodId,
 } from "@/lib/forms";
 import { submitHelpRequest } from "@/lib/help-requests";
-import { HELP_CATEGORIES } from "@/lib/site";
+import { HELP_CATEGORIES, SITE } from "@/lib/site";
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/request-help")({
   staticData: { sitemap: true },
-  head: () => ({
-    meta: [
-      { title: "Request Help — Tanzin Akther Foundation" },
-      {
-        name: "description",
-        content:
-          "Send a short, private request for help with education, financial hardship, medical needs or another humanitarian situation.",
-      },
-      { property: "og:title", content: "Request Help — Tanzin Akther Foundation" },
-      {
-        property: "og:description",
-        content: "A simple, private form to ask Tanzin Akther Foundation for support.",
-      },
-      { property: "og:type", content: "website" },
-      { name: "twitter:card", content: "summary_large_image" },
-    ],
-  }),
+  head: () => {
+    const title = `Request Help — ${SITE.name}`;
+    const description =
+      "Request support from Tanzin Akther Foundation for education, financial hardship, medical needs or other humanitarian situations through a private form.";
+    const url = "https://tanzinhumanityfoundation.lovable.app/request-help";
+
+    return {
+      meta: [
+        { title },
+        { name: "description", content: description },
+        { property: "og:title", content: title },
+        { property: "og:description", content: description },
+        { property: "og:type", content: "website" },
+        { property: "og:url", content: url },
+        { name: "twitter:card", content: "summary_large_image" },
+        { name: "twitter:title", content: title },
+        { name: "twitter:description", content: description },
+      ],
+      links: [{ rel: "canonical", href: url }],
+    };
+  },
   component: RequestHelpPage,
 });
 

@@ -37,3 +37,5 @@ use the editor.
 - `/admin` uses real email/password sign-in (no sign-up in the app) and shows the dashboard only when the user has a `public.user_roles` admin row; RLS (`private.has_role`) is the real guard. Both tabs read real rows; help-request status updates and confirmed deletion use the session-scoped client and verify affected rows so denied operations cannot appear successful.
 - `help_requests` and `contact_messages` are insert-only for visitors (column-level INSERT grant, no SELECT), so the browser creates the UUID itself and shows it as the reference; never add `.select()` to that insert.
 - Sitemap URLs derive from required route decisions through the versioned helper; exclude private subtrees and omit dates without page-specific content timestamps to avoid exposing private pages or misleading crawlers.
+
+- Public page SEO and social metadata belong in each leaf route head, with self-referencing canonical and og:url links; use SITE.name for titles and keep the root limited to site-wide defaults to avoid conflicting page identities.

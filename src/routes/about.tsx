@@ -7,23 +7,27 @@ import { SITE } from "@/lib/site";
 
 export const Route = createFileRoute("/about")({
   staticData: { sitemap: true },
-  head: () => ({
-    meta: [
-      { title: "About Us — Tanzin Akther Foundation" },
-      {
-        name: "description",
-        content:
-          "Learn about the mission, vision and values of Tanzin Akther Foundation, a people-centred humanitarian initiative.",
-      },
-      { property: "og:title", content: "About Us — Tanzin Akther Foundation" },
-      {
-        property: "og:description",
-        content: "Our mission, vision and the values that guide how we help people in need.",
-      },
-      { property: "og:type", content: "website" },
-      { name: "twitter:card", content: "summary_large_image" },
-    ],
-  }),
+  head: () => {
+    const title = `About Us — ${SITE.name}`;
+    const description =
+      "Discover the story, mission and values of Tanzin Akther Foundation, a Dhaka-based initiative standing beside people in hardship with kindness and dignity.";
+    const url = "https://tanzinhumanityfoundation.lovable.app/about";
+
+    return {
+      meta: [
+        { title },
+        { name: "description", content: description },
+        { property: "og:title", content: title },
+        { property: "og:description", content: description },
+        { property: "og:type", content: "website" },
+        { property: "og:url", content: url },
+        { name: "twitter:card", content: "summary_large_image" },
+        { name: "twitter:title", content: title },
+        { name: "twitter:description", content: description },
+      ],
+      links: [{ rel: "canonical", href: url }],
+    };
+  },
   component: AboutPage,
 });
 

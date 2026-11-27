@@ -9,26 +9,31 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { submitContactMessage } from "@/lib/contact-messages";
 import { contactSchema } from "@/lib/forms";
-import { CONTACT } from "@/lib/site";
+import { CONTACT, SITE } from "@/lib/site";
 
 export const Route = createFileRoute("/contact")({
   staticData: { sitemap: true },
-  head: () => ({
-    meta: [
-      { title: "Contact Us — Tanzin Akther Foundation" },
-      {
-        name: "description",
-        content: "Get in touch with Tanzin Akther Foundation with a question, idea or offer to help.",
-      },
-      { property: "og:title", content: "Contact Us — Tanzin Akther Foundation" },
-      {
-        property: "og:description",
-        content: "Send a message to Tanzin Akther Foundation.",
-      },
-      { property: "og:type", content: "website" },
-      { name: "twitter:card", content: "summary_large_image" },
-    ],
-  }),
+  head: () => {
+    const title = `Contact Us — ${SITE.name}`;
+    const description =
+      "Contact Tanzin Akther Foundation in Mirpur, Dhaka with questions, ideas or offers to help. Send a message or email us for donation enquiries.";
+    const url = "https://tanzinhumanityfoundation.lovable.app/contact";
+
+    return {
+      meta: [
+        { title },
+        { name: "description", content: description },
+        { property: "og:title", content: title },
+        { property: "og:description", content: description },
+        { property: "og:type", content: "website" },
+        { property: "og:url", content: url },
+        { name: "twitter:card", content: "summary_large_image" },
+        { name: "twitter:title", content: title },
+        { name: "twitter:description", content: description },
+      ],
+      links: [{ rel: "canonical", href: url }],
+    };
+  },
   component: ContactPage,
 });
 
