@@ -1,2 +1,3 @@
 - [ ] Show real help requests and allow confirmed admin-only deletion.
 - [ ] Verify deletion and visitor restrictions without deleting existing requests.
+- [ ] Finish Search Console verification and submit the published sitemap after approved publication.

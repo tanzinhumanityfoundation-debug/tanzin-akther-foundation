@@ -43,7 +43,7 @@ import { categoryTitle, HELP_CATEGORIES } from "@/lib/site";
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/admin")({
-  staticData: { sitemap: false },
+  staticData: { sitemap: "exclude-subtree" },
   head: () => ({
     meta: [
       { title: "Admin Dashboard — Tanzin Akther Foundation" },
